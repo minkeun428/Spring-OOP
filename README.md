@@ -79,9 +79,82 @@ public class OrderServiceImpl implements OrderService {
 - RateDiscountPolicy라는 다른 구현 클래스로 변경하고자 할 때, (할인 정책 : 할인액->할인률)
 - 해당 클래스를 변경해야 하는 문제가 발생한다.
 
+
+
+## 해결 방법
+## AppConfig로 관심사 분리
+
+- ServiceImpl에서 직접 객체를 구현하는 것이 아니라,
+- 객체 구현은 공통의 클래스에게 맡기고,
+- 구현 클래스들에선 실행에만 집중하도록 변경한다.
+- 또한, 의존관계 주입 대상이 변경되어도, 여기서만 주입 관계를 변경해주면 된다.
+- OCP 해결
+
+```java
+/**
+ * 공연 기획자 역할
+ * 애플리케이션의 실제 동작에 필요한 "구현 객체를 생성" 한다.
+ * 생성한 객체 인스턴스의 참조를 "생성자를 통해서 주입(연결)" 해준다.
+ * 메서드를 통해 역할과 구현 클래스가 한눈에 보인다.
+ * */
+public class AppConfig {
+
+    // 메서드를 주입
+    public MemberService memberService() {
+        return new MemberServiceImpl(memberRepository());
+    }
+
+    // 메서드가 구현
+    private MemberRepository memberRepository() {
+        return new MemoryMemberRepository();
+    }
+
+    public OrderService orderService() {
+        return new OrderServiceImpl(new MemoryMemberRepository(), discountPolicy());
+    }
+
+    public DiscountPolicy discountPolicy() {
+        // return new FixDiscountPolicy();
+        return new RateDiscountPolicy();
+    }
+
+}
+
+```
+
+- OrderServiceImpl은 인터페이스에만 의존한다.
+- DIP 해결
+
+
+```java
+public class OrderServiceImpl implements OrderService {
+
+    private final MemberRepository memberRepository;
+    private final DiscountPolicy discountPolicy;
+
+    public OrderServiceImpl(MemberRepository memberRepository, DiscountPolicy discountPolicy) {
+        this.memberRepository = memberRepository;
+        this.discountPolicy = discountPolicy;
+    }
+
+
+    @Override
+    public Order createOrder(Long memberId, String itemName, int itemPrice) {
+        // 회원 조회
+        Member member = memberRepository.findById(memberId);
+
+        // 주문을 할 때, 할인이 변경되도 주문은 전혀 영향을 받지 않도록 설계함. (단일 책임 원칙)
+        int dicountPrice = discountPolicy.discount(member, itemPrice);
+
+        return new Order(memberId, itemName, itemPrice, dicountPrice);
+    }
+}
+```
+
+
+
+
+
 ## 출처
 
 https://www.inflearn.com/course/스프링-핵심-원리-기본편
-
-
-
