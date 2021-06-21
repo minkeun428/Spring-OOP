@@ -4,6 +4,7 @@ import hello.core.discount.DiscountPolicy;
 import hello.core.member.Member;
 import hello.core.member.MemberRepository;
 
+// 클라이언트 객체는 실행하는 책임만 담당(SRP 적용)
 public class OrderServiceImpl implements OrderService {
 
     private final MemberRepository memberRepository;
@@ -19,8 +20,7 @@ public class OrderServiceImpl implements OrderService {
     public Order createOrder(Long memberId, String itemName, int itemPrice) {
         // 회원 조회
         Member member = memberRepository.findById(memberId);
-
-        // 주문을 할 때, 할인이 변경되도 주문은 전혀 영향을 받지 않도록 설계함. (단일 책임 원칙)
+        // 할인액 조회
         int dicountPrice = discountPolicy.discount(member, itemPrice);
 
         return new Order(memberId, itemName, itemPrice, dicountPrice);
