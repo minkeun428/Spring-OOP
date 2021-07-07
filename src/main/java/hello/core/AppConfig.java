@@ -24,17 +24,20 @@ public class AppConfig {
     // 메서드를 주입
     @Bean   // IoC컨테이너에 등록
     public MemberService memberService() {
+
         return new MemberServiceImpl(memberRepository());
     }
 
     // 메서드가 구현
     @Bean
     public MemberRepository memberRepository() {
+
         return new MemoryMemberRepository();
     }
 
     @Bean
     public OrderService orderService() {
+
         return new OrderServiceImpl(new MemoryMemberRepository(), discountPolicy());
     }
 
